@@ -8,4 +8,13 @@
 
 **CabbageSign was not created using XCode, simply we used GitHub Actions for it to create an artifact that provided the .ipa file.**
 
+## Previews
+- iPadOS
+  
+<img src="./assets/P1.jpeg" alt="preview 1" width="350" height="359"> <img src="./assets/P2.jpeg" alt="preview 1" width="350" height="350"> <img src="./assets/P3.jpeg" alt="preview 1" width="350" height="350">
+
+- iOS
+**soon**
+
 *ps. not a real sideloading app.*
+
