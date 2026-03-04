@@ -29,6 +29,31 @@ class GitHubActionsService: ObservableObject {
         self.branch = UserDefaults.standard.string(forKey: "workflowBranch") ?? "main"
     }
 
+    func fetchDefaultBranch() async throws -> String {
+        guard !githubToken.isEmpty else { throw GitHubError.missingToken }
+        guard !repository.isEmpty else { throw GitHubError.missingRepository }
+
+        let parts = repository.split(separator: "/")
+        guard parts.count == 2 else { throw GitHubError.invalidRepository }
+        let owner = String(parts[0])
+        let repo = String(parts[1])
+
+        let urlString = "https://api.github.com/repos/\(owner)/\(repo)"
+        guard let url = URL(string: urlString) else { throw GitHubError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(githubToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let defaultBranch = json?["default_branch"] as? String else {
+            throw GitHubError.invalidRepository
+        }
+        return defaultBranch
+    }
+
     func dispatchWorkflow(ipaBase64: String, p12Base64: String, provisionBase64: String, certPassword: String) async throws -> Int {
         guard !githubToken.isEmpty else { throw GitHubError.missingToken }
         guard !repository.isEmpty else { throw GitHubError.missingRepository }
