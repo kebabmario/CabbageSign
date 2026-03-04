@@ -63,6 +63,15 @@ class GitHubActionsService: ObservableObject {
         let owner = String(parts[0])
         let repo = String(parts[1])
 
+        // Auto-detect the repo's default branch at dispatch time to avoid HTTP 422 errors
+        let ref: String
+        if let detected = try? await fetchDefaultBranch() {
+            ref = detected
+            await MainActor.run { branch = detected }
+        } else {
+            ref = branch
+        }
+
         let urlString = "https://api.github.com/repos/\(owner)/\(repo)/actions/workflows/\(workflowFilename)/dispatches"
         guard let url = URL(string: urlString) else { throw GitHubError.invalidURL }
 
@@ -74,7 +83,7 @@ class GitHubActionsService: ObservableObject {
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
 
         let body: [String: Any] = [
-            "ref": branch,
+            "ref": ref,
             "inputs": [
                 "ipa_base64": ipaBase64,
                 "p12_base64": p12Base64,
