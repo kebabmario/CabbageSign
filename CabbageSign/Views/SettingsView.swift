@@ -3,9 +3,12 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @StateObject private var githubService = GitHubActionsService.shared
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     @State private var tokenInput: String = ""
     @State private var showToken: Bool = false
+
+    var isIpad: Bool { horizontalSizeClass == .regular }
 
     var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
@@ -38,8 +41,9 @@ struct SettingsView: View {
                     HStack {
                         Circle()
                             .fill(theme.accentColor)
-                            .frame(width: 20, height: 20)
+                            .frame(width: isIpad ? 26 : 20, height: isIpad ? 26 : 20)
                         Text(theme.rawValue)
+                            .font(isIpad ? .title3 : .body)
                             .foregroundColor(themeManager.currentTheme.textColor)
                         Spacer()
                         if themeManager.currentTheme == theme {
@@ -60,6 +64,7 @@ struct SettingsView: View {
         Section {
             HStack {
                 Text("Token")
+                    .font(isIpad ? .title3 : .body)
                     .foregroundColor(themeManager.currentTheme.textColor)
                 Spacer()
                 if showToken {
@@ -70,12 +75,14 @@ struct SettingsView: View {
                     .foregroundColor(themeManager.currentTheme.accentColor)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
+                    .font(isIpad ? .title3 : .body)
                 } else {
                     SecureField("GitHub Token", text: $tokenInput, onCommit: {
                         GitHubActionsService.shared.githubToken = tokenInput
                     })
                     .multilineTextAlignment(.trailing)
                     .foregroundColor(themeManager.currentTheme.accentColor)
+                    .font(isIpad ? .title3 : .body)
                 }
                 Button(action: { showToken.toggle() }) {
                     Image(systemName: showToken ? "eye.slash" : "eye")
@@ -86,6 +93,7 @@ struct SettingsView: View {
 
             HStack {
                 Text("Repository")
+                    .font(isIpad ? .title3 : .body)
                     .foregroundColor(themeManager.currentTheme.textColor)
                 Spacer()
                 TextField("owner/repo", text: $githubService.repository)
@@ -93,11 +101,13 @@ struct SettingsView: View {
                     .foregroundColor(themeManager.currentTheme.accentColor)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
+                    .font(isIpad ? .title3 : .body)
             }
             .listRowBackground(themeManager.currentTheme.cardColor)
 
             HStack {
                 Text("Workflow File")
+                    .font(isIpad ? .title3 : .body)
                     .foregroundColor(themeManager.currentTheme.textColor)
                 Spacer()
                 TextField("sign.yml", text: $githubService.workflowFilename)
@@ -105,14 +115,24 @@ struct SettingsView: View {
                     .foregroundColor(themeManager.currentTheme.accentColor)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
+                    .font(isIpad ? .title3 : .body)
             }
             .listRowBackground(themeManager.currentTheme.cardColor)
         } header: {
             Text("GitHub Configuration")
                 .foregroundColor(themeManager.currentTheme.secondaryTextColor)
         } footer: {
-            Text("Your GitHub token is stored securely in the Keychain.")
-                .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("GitHub Token: Create a Personal Access Token (PAT) at https://github.com → Settings → Developer settings → Personal access tokens → Tokens (classic). Enable the workflow scope. Paste the token here.")
+                    .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+                    .font(isIpad ? .footnote : .caption)
+                Text("Repository: Enter your GitHub repo in owner/repo format (e.g. yourname/CabbageSign).")
+                    .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+                    .font(isIpad ? .footnote : .caption)
+                Text("Your token is stored securely in the Keychain.")
+                    .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+                    .font(isIpad ? .footnote : .caption)
+            }
         }
     }
 
@@ -121,14 +141,14 @@ struct SettingsView: View {
             HStack {
                 Image(systemName: "leaf.circle.fill")
                     .resizable()
-                    .frame(width: 50, height: 50)
+                    .frame(width: isIpad ? 64 : 50, height: isIpad ? 64 : 50)
                     .foregroundColor(themeManager.currentTheme.accentColor)
                 VStack(alignment: .leading) {
                     Text("CabbageSign")
-                        .font(.headline)
+                        .font(isIpad ? .title2 : .headline)
                         .foregroundColor(themeManager.currentTheme.textColor)
                     Text("Version \(appVersion)")
-                        .font(.caption)
+                        .font(isIpad ? .subheadline : .caption)
                         .foregroundColor(themeManager.currentTheme.secondaryTextColor)
                 }
             }
