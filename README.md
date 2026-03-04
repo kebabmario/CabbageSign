@@ -2,3 +2,5 @@
 
 # CabbageSign
 iOS sideloading tool for developers
+
+- Adding iPA libraries are possible.
