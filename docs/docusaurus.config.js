@@ -12,7 +12,7 @@ const config = {
   },
 
   url: 'https://kebabmario.github.io',
-  baseUrl: '/CabbageSign/',
+  baseUrl: '/',
 
   organizationName: 'kebabmario',
   projectName: 'CabbageSign',
