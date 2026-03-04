@@ -1,0 +1,33 @@
+name: Build CabbageSign IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Build IPA
+        run: |
+          xcodebuild -project CabbageSign.xcodeproj \
+            -scheme CabbageSign \
+            -configuration Release \
+            -archivePath build/CabbageSign.xcarchive \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+          xcodebuild -exportArchive \
+            -archivePath build/CabbageSign.xcarchive \
+            -exportPath build/ \
+            -exportOptionsPlist ExportOptions.plist
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CabbageSign-ipa
+          path: build/*.ipa
