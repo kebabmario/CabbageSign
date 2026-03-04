@@ -21,23 +21,23 @@ CabbageSign is a **UI template only**. It has no real sideloading functionality 
 
 ## What's inside
 
-### 🎨 SwiftUI-native UI
+### SwiftUI-native UI
 
 All views are built with SwiftUI — tabs, lists, detail pages and settings — matching the feel of a real App Store app.
 
-### 🌗 Theme system
+### Theme system
 
 A `ThemeManager` drives accent colours and backgrounds across the whole app. Swap colours in one place to rebrand instantly.
 
-### 📚 Tab structure
+### Tab structure
 
 Four pre-built tabs: *Sign*, *Library*, *Browse*, and *Settings* — ready for you to wire up real logic.
 
-### 🏗️ CI / GitHub Actions
+### CI / GitHub Actions
 
 A GitHub Actions workflow is included that compiles the project and produces an `.ipa` artifact — no Xcode required on your machine.
 
-### 📁 Models & Services scaffold
+### Models & Services scaffold
 
 Stub models and service files are in place so you can drop in real signing backends, package sources, or APIs without restructuring the project.
 
