@@ -9,6 +9,8 @@ struct SettingsView: View {
     @State private var showToken: Bool = false
     @State private var savedFeedback: Bool = false
     @State private var feedbackTask: Task<Void, Never>?
+    @State private var isSaving: Bool = false
+    @State private var branchDetectionFailed: Bool = false
 
     var isIpad: Bool { horizontalSizeClass == .regular }
 
@@ -44,13 +46,25 @@ struct SettingsView: View {
     }
 
     private func saveSettings() {
+        guard !isSaving else { return }
         persistToken()
-        feedbackTask?.cancel()
-        savedFeedback = true
-        feedbackTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            if !Task.isCancelled {
-                savedFeedback = false
+        isSaving = true
+        branchDetectionFailed = false
+        Task { @MainActor in
+            do {
+                let detected = try await GitHubActionsService.shared.fetchDefaultBranch()
+                githubService.branch = detected
+            } catch {
+                branchDetectionFailed = true
+            }
+            isSaving = false
+            feedbackTask?.cancel()
+            savedFeedback = true
+            feedbackTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                if !Task.isCancelled {
+                    savedFeedback = false
+                }
             }
         }
     }
@@ -141,13 +155,21 @@ struct SettingsView: View {
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
                     .font(isIpad ? .title3 : .body)
+                if branchDetectionFailed {
+                    Text("Could not auto-detect branch. Verify the branch matches your repo's default branch.")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
             }
             .listRowBackground(themeManager.currentTheme.cardColor)
 
             Button(action: saveSettings) {
                 HStack {
                     Spacer()
-                    if savedFeedback {
+                    if isSaving {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else if savedFeedback {
                         Label("Saved!", systemImage: "checkmark.circle.fill")
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
@@ -160,6 +182,7 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 4)
             }
+            .disabled(isSaving)
             .listRowBackground(themeManager.currentTheme.accentColor)
         } header: {
             Text("GitHub Configuration")
