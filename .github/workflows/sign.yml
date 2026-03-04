@@ -1,0 +1,50 @@
+name: Sign IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      ipa_base64:
+        description: 'Base64 encoded IPA file'
+        required: true
+      p12_base64:
+        description: 'Base64 encoded P12 certificate'
+        required: true
+      mobileprovision_base64:
+        description: 'Base64 encoded mobileprovision'
+        required: true
+      cert_password:
+        description: 'Certificate password (leave empty if none)'
+        required: false
+        default: ''
+
+jobs:
+  sign:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install zsign
+        run: brew install zsign
+
+      - name: Decode files
+        run: |
+          echo "${{ github.event.inputs.ipa_base64 }}" | base64 --decode > input.ipa
+          echo "${{ github.event.inputs.p12_base64 }}" | base64 --decode > cert.p12
+          echo "${{ github.event.inputs.mobileprovision_base64 }}" | base64 --decode > app.mobileprovision
+
+      - name: Sign IPA
+        run: |
+          if [ -z "${{ github.event.inputs.cert_password }}" ]; then
+            zsign -k cert.p12 -m app.mobileprovision -o signed.ipa input.ipa
+          else
+            zsign -k cert.p12 -p "${{ github.event.inputs.cert_password }}" -m app.mobileprovision -o signed.ipa input.ipa
+          fi
+
+      - name: Upload signed IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-ipa
+          path: signed.ipa
