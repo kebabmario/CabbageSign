@@ -11,8 +11,6 @@ CabbageSign is a **UI template only**. It has no real sideloading functionality 
 
 :::
 
-![CabbageSign icon](/icon.png)
-
 **CabbageSign** is an open-source SwiftUI template that *looks like* a polished iOS sideloading app — but does **nothing** under the hood. Fork it, customise it, and ship your own sideloading experience.
 
 [Fork on GitHub](https://github.com/kebabmario/CabbageSign/fork) &nbsp;·&nbsp; [Read the guide →](./get-started)
