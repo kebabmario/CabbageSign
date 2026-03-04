@@ -41,6 +41,6 @@ A GitHub Actions workflow is included that compiles the project and produces an 
 
 Stub models and service files are in place so you can drop in real signing backends, package sources, or APIs without restructuring the project.
 
-### 🍴 Fork-ready
+### Fork-ready
 
 Minimal dependencies, clean project structure, and an MIT-style licence make this the quickest way to start your own sideloading app.
