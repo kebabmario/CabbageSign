@@ -19,9 +19,14 @@ class GitHubActionsService: ObservableObject {
         didSet { UserDefaults.standard.set(workflowFilename, forKey: "workflowFilename") }
     }
 
+    @Published var branch: String {
+        didSet { UserDefaults.standard.set(branch, forKey: "workflowBranch") }
+    }
+
     init() {
         self.repository = UserDefaults.standard.string(forKey: "githubRepository") ?? ""
         self.workflowFilename = UserDefaults.standard.string(forKey: "workflowFilename") ?? "sign.yml"
+        self.branch = UserDefaults.standard.string(forKey: "workflowBranch") ?? "main"
     }
 
     func dispatchWorkflow(ipaBase64: String, p12Base64: String, provisionBase64: String, certPassword: String) async throws -> Int {
@@ -44,7 +49,7 @@ class GitHubActionsService: ObservableObject {
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
 
         let body: [String: Any] = [
-            "ref": "main",
+            "ref": branch,
             "inputs": [
                 "ipa_base64": ipaBase64,
                 "p12_base64": p12Base64,
@@ -54,10 +59,12 @@ class GitHubActionsService: ObservableObject {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               (200...204).contains(httpResponse.statusCode) else {
-            throw GitHubError.dispatchFailed
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw GitHubError.dispatchFailed(statusCode: statusCode, detail: body)
         }
 
         try await Task.sleep(nanoseconds: 3_000_000_000)
@@ -118,7 +125,7 @@ class GitHubActionsService: ObservableObject {
         case missingRepository
         case invalidRepository
         case invalidURL
-        case dispatchFailed
+        case dispatchFailed(statusCode: Int, detail: String)
         case noRunFound
 
         var errorDescription: String? {
@@ -127,7 +134,11 @@ class GitHubActionsService: ObservableObject {
             case .missingRepository: return "Repository not configured. Please set it in Settings."
             case .invalidRepository: return "Repository format should be owner/repo."
             case .invalidURL: return "Invalid URL."
-            case .dispatchFailed: return "Failed to dispatch workflow."
+            case .dispatchFailed(let statusCode, let detail):
+                if statusCode == 422 {
+                    return "Failed to dispatch workflow (HTTP \(statusCode)): branch not found or workflow not enabled. Check the Branch setting matches your repo's default branch."
+                }
+                return "Failed to dispatch workflow (HTTP \(statusCode))\(detail.isEmpty ? "" : ": \(detail)")"
             case .noRunFound: return "No workflow run found."
             }
         }
