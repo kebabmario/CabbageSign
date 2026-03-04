@@ -132,6 +132,18 @@ struct SettingsView: View {
             }
             .listRowBackground(themeManager.currentTheme.cardColor)
 
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Branch")
+                    .font(isIpad ? .title3 : .body)
+                    .foregroundColor(themeManager.currentTheme.textColor)
+                TextField("main", text: $githubService.branch)
+                    .foregroundColor(themeManager.currentTheme.accentColor)
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+                    .font(isIpad ? .title3 : .body)
+            }
+            .listRowBackground(themeManager.currentTheme.cardColor)
+
             Button(action: saveSettings) {
                 HStack {
                     Spacer()
@@ -158,6 +170,9 @@ struct SettingsView: View {
                     .foregroundColor(themeManager.currentTheme.secondaryTextColor)
                     .font(isIpad ? .footnote : .caption)
                 Text("Repository: Enter your GitHub repo in owner/repo format (e.g. yourname/CabbageSign).")
+                    .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+                    .font(isIpad ? .footnote : .caption)
+                Text("Branch: The branch to use when triggering the workflow (typically your default branch, e.g. main or master).")
                     .foregroundColor(themeManager.currentTheme.secondaryTextColor)
                     .font(isIpad ? .footnote : .caption)
                 Text("Your token is stored securely in the Keychain.")
