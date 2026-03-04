@@ -11,8 +11,8 @@ const config = {
     v4: true,
   },
 
-  url: 'https://kebabmario.github.io',
-  baseUrl: '/CabbageSign/',
+  url: 'https://csigner.kebabmario.dev',
+  baseUrl: '/',
 
   organizationName: 'kebabmario',
   projectName: 'CabbageSign',
