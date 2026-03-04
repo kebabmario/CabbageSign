@@ -5,9 +5,12 @@ struct SignView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @StateObject private var githubService = GitHubActionsService.shared
 
-    @State private var ipaURL: URL?
-    @State private var p12URL: URL?
-    @State private var provisionURL: URL?
+    @State private var ipaName: String?
+    @State private var ipaData: Data?
+    @State private var p12Name: String?
+    @State private var p12Data: Data?
+    @State private var provisionName: String?
+    @State private var provisionData: Data?
     @State private var certPassword: String = ""
     @State private var requiresPassword: Bool = false
     @State private var isSigning: Bool = false
@@ -48,19 +51,25 @@ struct SignView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .sheet(isPresented: $showingIPAPicker) {
-            DocumentPickerView(contentTypes: [UTType(filenameExtension: "ipa") ?? .data]) { url in
-                ipaURL = url
+            DocumentPickerView(contentTypes: [UTType(filenameExtension: "ipa") ?? .data]) { name, data in
+                ipaName = name
+                ipaData = data
             }
         }
         .sheet(isPresented: $showingP12Picker) {
-            DocumentPickerView(contentTypes: [UTType(filenameExtension: "p12") ?? .data]) { url in
-                p12URL = url
-                checkP12Password(url: url)
+            DocumentPickerView(contentTypes: [UTType(filenameExtension: "p12") ?? .data]) { name, data in
+                p12Name = name
+                p12Data = data
+                if let data = data {
+                    requiresPassword = SigningService.requiresPassword(p12Data: data)
+                    if requiresPassword { certPassword = "" }
+                }
             }
         }
         .sheet(isPresented: $showingProvisionPicker) {
-            DocumentPickerView(contentTypes: [UTType(filenameExtension: "mobileprovision") ?? .data]) { url in
-                provisionURL = url
+            DocumentPickerView(contentTypes: [UTType(filenameExtension: "mobileprovision") ?? .data]) { name, data in
+                provisionName = name
+                provisionData = data
             }
         }
     }
@@ -69,7 +78,7 @@ struct SignView: View {
         VStack(spacing: 12) {
             FilePickerRow(
                 title: "IPA File",
-                filename: ipaURL?.lastPathComponent,
+                filename: ipaName,
                 icon: "app.badge",
                 accentColor: themeManager.currentTheme.accentColor,
                 cardColor: themeManager.currentTheme.cardColor,
@@ -81,7 +90,7 @@ struct SignView: View {
 
             FilePickerRow(
                 title: "P12 Certificate",
-                filename: p12URL?.lastPathComponent,
+                filename: p12Name,
                 icon: "lock.shield",
                 accentColor: themeManager.currentTheme.accentColor,
                 cardColor: themeManager.currentTheme.cardColor,
@@ -93,7 +102,7 @@ struct SignView: View {
 
             FilePickerRow(
                 title: "Mobile Provision",
-                filename: provisionURL?.lastPathComponent,
+                filename: provisionName,
                 icon: "doc.badge.checkmark",
                 accentColor: themeManager.currentTheme.accentColor,
                 cardColor: themeManager.currentTheme.cardColor,
@@ -193,20 +202,14 @@ struct SignView: View {
     }
 
     private var canSign: Bool {
-        ipaURL != nil && p12URL != nil && provisionURL != nil &&
+        ipaData != nil && p12Data != nil && provisionData != nil &&
         (!requiresPassword || !certPassword.isEmpty)
     }
 
-    private func checkP12Password(url: URL) {
-        guard let data = try? Data(contentsOf: url) else { return }
-        requiresPassword = SigningService.requiresPassword(p12Data: data)
-        if requiresPassword { certPassword = "" }
-    }
-
     private func startSigning() {
-        guard let ipaURL = ipaURL,
-              let p12URL = p12URL,
-              let provisionURL = provisionURL else { return }
+        guard let ipaData = ipaData,
+              let p12Data = p12Data,
+              let provisionData = provisionData else { return }
 
         isSigning = true
         errorMessage = ""
@@ -216,22 +219,17 @@ struct SignView: View {
 
         Task {
             do {
-                guard let p12Data = try? Data(contentsOf: p12URL),
-                      let provisionData = try? Data(contentsOf: provisionURL) else {
-                    throw NSError(domain: "CabbageSign", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to read files"])
-                }
-
                 let p12Base64 = p12Data.base64EncodedString()
                 let provisionBase64 = provisionData.base64EncodedString()
 
                 await MainActor.run { statusMessage = "Uploading IPA..."; progress = 0.2 }
 
-                let ipaURLString = ipaURL.absoluteString
+                let ipaBase64 = ipaData.base64EncodedString()
 
                 await MainActor.run { statusMessage = "Dispatching workflow..."; progress = 0.3 }
 
                 let runId = try await GitHubActionsService.shared.dispatchWorkflow(
-                    ipaURL: ipaURLString,
+                    ipaBase64: ipaBase64,
                     p12Base64: p12Base64,
                     provisionBase64: provisionBase64,
                     certPassword: certPassword
@@ -313,7 +311,7 @@ struct FilePickerRow: View {
 
 struct DocumentPickerView: UIViewControllerRepresentable {
     let contentTypes: [UTType]
-    let completion: (URL) -> Void
+    let completion: (String, Data?) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(completion: completion) }
 
@@ -326,13 +324,17 @@ struct DocumentPickerView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
 
     class Coordinator: NSObject, UIDocumentPickerDelegate {
-        let completion: (URL) -> Void
-        init(completion: @escaping (URL) -> Void) { self.completion = completion }
+        let completion: (String, Data?) -> Void
+        init(completion: @escaping (String, Data?) -> Void) { self.completion = completion }
 
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
-            _ = url.startAccessingSecurityScopedResource()
-            completion(url)
+            let accessed = url.startAccessingSecurityScopedResource()
+            let data = try? Data(contentsOf: url)
+            if accessed {
+                url.stopAccessingSecurityScopedResource()
+            }
+            completion(url.lastPathComponent, data)
         }
     }
 }

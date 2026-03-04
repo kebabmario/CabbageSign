@@ -3,8 +3,8 @@ name: Sign IPA
 on:
   workflow_dispatch:
     inputs:
-      ipa_url:
-        description: 'URL to the IPA file'
+      ipa_base64:
+        description: 'Base64 encoded IPA file'
         required: true
       p12_base64:
         description: 'Base64 encoded P12 certificate'
@@ -29,14 +29,11 @@ jobs:
       - name: Install zsign
         run: brew install zsign
 
-      - name: Decode certificate and provision
+      - name: Decode files
         run: |
+          echo "${{ github.event.inputs.ipa_base64 }}" | base64 --decode > input.ipa
           echo "${{ github.event.inputs.p12_base64 }}" | base64 --decode > cert.p12
           echo "${{ github.event.inputs.mobileprovision_base64 }}" | base64 --decode > app.mobileprovision
-
-      - name: Download IPA
-        run: |
-          curl -L "${{ github.event.inputs.ipa_url }}" -o input.ipa
 
       - name: Sign IPA
         run: |

@@ -119,10 +119,10 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section {
             HStack {
-                Image("AppIcon")
+                Image(systemName: "leaf.circle.fill")
                     .resizable()
                     .frame(width: 50, height: 50)
-                    .cornerRadius(12)
+                    .foregroundColor(themeManager.currentTheme.accentColor)
                 VStack(alignment: .leading) {
                     Text("CabbageSign")
                         .font(.headline)

@@ -24,7 +24,7 @@ class GitHubActionsService: ObservableObject {
         self.workflowFilename = UserDefaults.standard.string(forKey: "workflowFilename") ?? "sign.yml"
     }
 
-    func dispatchWorkflow(ipaURL: String, p12Base64: String, provisionBase64: String, certPassword: String) async throws -> Int {
+    func dispatchWorkflow(ipaBase64: String, p12Base64: String, provisionBase64: String, certPassword: String) async throws -> Int {
         guard !githubToken.isEmpty else { throw GitHubError.missingToken }
         guard !repository.isEmpty else { throw GitHubError.missingRepository }
 
@@ -46,7 +46,7 @@ class GitHubActionsService: ObservableObject {
         let body: [String: Any] = [
             "ref": "main",
             "inputs": [
-                "ipa_url": ipaURL,
+                "ipa_base64": ipaBase64,
                 "p12_base64": p12Base64,
                 "mobileprovision_base64": provisionBase64,
                 "cert_password": certPassword
