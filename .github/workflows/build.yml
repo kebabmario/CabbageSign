@@ -12,9 +12,11 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
       - name: Select Xcode
         run: sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
-      - name: Build IPA
+
+      - name: Build Archive
         run: |
           xcodebuild -project CabbageSign.xcodeproj \
             -scheme CabbageSign \
@@ -23,13 +25,22 @@ jobs:
             archive \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-          xcodebuild -exportArchive \
-            -archivePath build/CabbageSign.xcarchive \
-            -exportPath build/ \
-            -exportOptionsPlist ExportOptions.plist
+            CODE_SIGNING_ALLOWED=NO \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Package IPA manually
+        run: |
+          APP_PATH=$(find build/CabbageSign.xcarchive -name "*.app" | head -1)
+          echo "Found app at: $APP_PATH"
+          mkdir -p build/Payload
+          cp -r "$APP_PATH" build/Payload/
+          cd build
+          zip -r CabbageSign.ipa Payload/
+          echo "IPA created successfully"
+          ls -lh CabbageSign.ipa
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: CabbageSign-ipa
-          path: build/*.ipa
+          path: build/CabbageSign.ipa
