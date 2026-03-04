@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct SignView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @StateObject private var githubService = GitHubActionsService.shared
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     @State private var ipaName: String?
     @State private var ipaData: Data?
@@ -22,13 +23,15 @@ struct SignView: View {
     @State private var showingProvisionPicker = false
     @State private var progress: Double = 0
 
+    var isIpad: Bool { horizontalSizeClass == .regular }
+
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 themeManager.currentTheme.backgroundColor.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: isIpad ? 24 : 16) {
                         filePickerSection
                         if requiresPassword {
                             passwordSection
@@ -44,7 +47,7 @@ struct SignView: View {
                         }
                         signButton
                     }
-                    .padding()
+                    .padding(isIpad ? 24 : 16)
                 }
             }
             .navigationTitle("Sign")
