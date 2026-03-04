@@ -1,0 +1,27 @@
+/**
+ * CabbageSign docs — custom Infima theme overrides.
+ * Primary colour matches the green accent (#4caf73) used in the app.
+ */
+
+:root {
+  --ifm-color-primary: #4caf73;
+  --ifm-color-primary-dark: #39a463;
+  --ifm-color-primary-darker: #359b5e;
+  --ifm-color-primary-darkest: #2c7f4d;
+  --ifm-color-primary-light: #5fba83;
+  --ifm-color-primary-lighter: #68be8a;
+  --ifm-color-primary-lightest: #82ca9e;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #4caf73;
+  --ifm-color-primary-dark: #39a463;
+  --ifm-color-primary-darker: #359b5e;
+  --ifm-color-primary-darkest: #2c7f4d;
+  --ifm-color-primary-light: #5fba83;
+  --ifm-color-primary-lighter: #68be8a;
+  --ifm-color-primary-lightest: #82ca9e;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
