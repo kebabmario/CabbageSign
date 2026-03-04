@@ -7,6 +7,8 @@ struct SettingsView: View {
 
     @State private var tokenInput: String = ""
     @State private var showToken: Bool = false
+    @State private var savedFeedback: Bool = false
+    @State private var feedbackTask: Task<Void, Never>?
 
     var isIpad: Bool { horizontalSizeClass == .regular }
 
@@ -15,7 +17,7 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 themeManager.currentTheme.backgroundColor.ignoresSafeArea()
                 List {
@@ -31,6 +33,25 @@ struct SettingsView: View {
         }
         .onAppear {
             tokenInput = GitHubActionsService.shared.githubToken
+        }
+        .onDisappear {
+            persistToken()
+        }
+    }
+
+    private func persistToken() {
+        GitHubActionsService.shared.githubToken = tokenInput
+    }
+
+    private func saveSettings() {
+        persistToken()
+        feedbackTask?.cancel()
+        savedFeedback = true
+        feedbackTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            if !Task.isCancelled {
+                savedFeedback = false
+            }
         }
     }
 
@@ -62,42 +83,36 @@ struct SettingsView: View {
 
     private var githubSection: some View {
         Section {
-            HStack {
-                Text("Token")
-                    .font(isIpad ? .title3 : .body)
-                    .foregroundColor(themeManager.currentTheme.textColor)
-                Spacer()
-                if showToken {
-                    TextField("GitHub Token", text: $tokenInput, onCommit: {
-                        GitHubActionsService.shared.githubToken = tokenInput
-                    })
-                    .multilineTextAlignment(.trailing)
-                    .foregroundColor(themeManager.currentTheme.accentColor)
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                    .font(isIpad ? .title3 : .body)
-                } else {
-                    SecureField("GitHub Token", text: $tokenInput, onCommit: {
-                        GitHubActionsService.shared.githubToken = tokenInput
-                    })
-                    .multilineTextAlignment(.trailing)
-                    .foregroundColor(themeManager.currentTheme.accentColor)
-                    .font(isIpad ? .title3 : .body)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("GitHub Token")
+                        .font(isIpad ? .title3 : .body)
+                        .foregroundColor(themeManager.currentTheme.textColor)
+                    Spacer()
+                    Button(action: { showToken.toggle() }) {
+                        Image(systemName: showToken ? "eye.slash" : "eye")
+                            .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+                    }
                 }
-                Button(action: { showToken.toggle() }) {
-                    Image(systemName: showToken ? "eye.slash" : "eye")
-                        .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+                if showToken {
+                    TextField("Paste token here", text: $tokenInput)
+                        .foregroundColor(themeManager.currentTheme.accentColor)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .font(isIpad ? .title3 : .body)
+                } else {
+                    SecureField("Paste token here", text: $tokenInput)
+                        .foregroundColor(themeManager.currentTheme.accentColor)
+                        .font(isIpad ? .title3 : .body)
                 }
             }
             .listRowBackground(themeManager.currentTheme.cardColor)
 
-            HStack {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Repository")
                     .font(isIpad ? .title3 : .body)
                     .foregroundColor(themeManager.currentTheme.textColor)
-                Spacer()
                 TextField("owner/repo", text: $githubService.repository)
-                    .multilineTextAlignment(.trailing)
                     .foregroundColor(themeManager.currentTheme.accentColor)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
@@ -105,19 +120,35 @@ struct SettingsView: View {
             }
             .listRowBackground(themeManager.currentTheme.cardColor)
 
-            HStack {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Workflow File")
                     .font(isIpad ? .title3 : .body)
                     .foregroundColor(themeManager.currentTheme.textColor)
-                Spacer()
                 TextField("sign.yml", text: $githubService.workflowFilename)
-                    .multilineTextAlignment(.trailing)
                     .foregroundColor(themeManager.currentTheme.accentColor)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
                     .font(isIpad ? .title3 : .body)
             }
             .listRowBackground(themeManager.currentTheme.cardColor)
+
+            Button(action: saveSettings) {
+                HStack {
+                    Spacer()
+                    if savedFeedback {
+                        Label("Saved!", systemImage: "checkmark.circle.fill")
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                    } else {
+                        Text("Save Settings")
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+            }
+            .listRowBackground(themeManager.currentTheme.accentColor)
         } header: {
             Text("GitHub Configuration")
                 .foregroundColor(themeManager.currentTheme.secondaryTextColor)
