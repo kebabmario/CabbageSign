@@ -11,7 +11,7 @@ struct LibraryView: View {
     var isIpad: Bool { horizontalSizeClass == .regular }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 themeManager.currentTheme.backgroundColor.ignoresSafeArea()
 
@@ -186,6 +186,20 @@ struct SourceAppsView: View {
                     .tint(themeManager.currentTheme.accentColor)
             } else if let error = error {
                 Text(error).foregroundColor(.red).padding()
+            } else if apps.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 60))
+                        .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+                    Text("No Apps Found")
+                        .font(.title2).fontWeight(.semibold)
+                        .foregroundColor(themeManager.currentTheme.textColor)
+                    Text("This source doesn't have any apps available.")
+                        .font(.subheadline)
+                        .foregroundColor(themeManager.currentTheme.secondaryTextColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
             } else if isIpad {
                 let columns = [GridItem(.adaptive(minimum: 300), spacing: 16)]
                 ScrollView {

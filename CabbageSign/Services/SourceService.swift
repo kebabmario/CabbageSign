@@ -25,7 +25,7 @@ class SourceService: ObservableObject {
 
         // Try AltStore/SideStore repo format first (object with "apps" key)
         if let repoResponse = try? JSONDecoder().decode(RepoResponse.self, from: data) {
-            return repoResponse.apps.map { $0.toAppEntry() }
+            return repoResponse.apps.compactMap { $0.toAppEntry() }
         }
 
         // Fall back to plain array format
@@ -54,31 +54,43 @@ private struct RepoResponse: Decodable {
 private struct RepoApp: Decodable {
     var name: String
     var bundleIdentifier: String
-    var version: String
+    var version: String?
     var developerName: String?
     var developer: String?
     var localizedDescription: String?
     var description: String?
     var iconURL: String?
-    var downloadURL: String
+    var downloadURL: String?
     var size: Int?
     var screenshotURLs: [String]?
     var subtitle: String?
     var tagline: String?
+    var versions: [RepoAppVersion]?
 
-    func toAppEntry() -> AppEntry {
-        AppEntry(
+    func toAppEntry() -> AppEntry? {
+        // Prefer flat fields; fall back to the first item in `versions`
+        let resolvedVersion = version ?? versions?.first?.version ?? "Unknown"
+        let resolvedDownloadURL = downloadURL ?? versions?.first?.downloadURL ?? ""
+        let resolvedSize = size ?? versions?.first?.size
+        guard !resolvedDownloadURL.isEmpty else { return nil }
+        return AppEntry(
             name: name,
             bundleIdentifier: bundleIdentifier,
-            version: version,
+            version: resolvedVersion,
             developer: developerName ?? developer ?? "",
             description: localizedDescription ?? description ?? "",
             iconURL: iconURL,
-            downloadURL: downloadURL,
-            size: size,
+            downloadURL: resolvedDownloadURL,
+            size: resolvedSize,
             date: nil,
             screenshotURLs: screenshotURLs ?? [],
             tagline: subtitle ?? tagline ?? ""
         )
     }
+}
+
+private struct RepoAppVersion: Decodable {
+    var version: String
+    var downloadURL: String
+    var size: Int?
 }

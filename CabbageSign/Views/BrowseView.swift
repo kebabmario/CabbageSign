@@ -17,7 +17,7 @@ struct BrowseView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 themeManager.currentTheme.backgroundColor.ignoresSafeArea()
 
